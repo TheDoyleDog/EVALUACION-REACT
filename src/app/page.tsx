@@ -1,29 +1,102 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Formulario from '@/components/Formulario';
 import Tabla from '@/components/Tabla';
-import { Evento } from '@/types';
+import { Evento, initialStateEvento } from '@/types';
 
 export default function Home() {
-  const [testEventos, setTestEventos] = useState<Evento[]>([
-    { id: '1', nombre: 'Conferencia Tech', presupuesto: 500, categoria: 'educativo', descripcion: 'Conferencia anual de tecnología', fecha: '2025-08-15' },
-    { id: '2', nombre: 'Festival de Música', presupuesto: 1200, categoria: 'cultural', descripcion: 'Festival de verano con bandas locales', fecha: '2025-07-20' },
-    { id: '3', nombre: 'Partido de Baloncesto', presupuesto: 150, categoria: 'deportivo', descripcion: 'Partido amistoso de la liga local', fecha: '2025-07-10' },
-  ]);
+  const [eventos, setEventos] = useState<Evento[]>([]);
+  const [eventoEditar, setEventoEditar] = useState<Evento | null>(null);
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
-  const handleEditTest = (evento: Evento) => {
-    console.log("Editando evento:", evento);
+  // Cargar eventos desde local storage al iniciar la pagina
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      let listadoStr = window.localStorage.getItem("eventos");
+      if (listadoStr != null) {
+        let listado = JSON.parse(listadoStr);
+        setEventos(listado);
+      }
+      console.log("useEffect: Eventos cargados exitosamente");
+    }
+  }, []);
+
+  const handleRegistrar = (evento: Evento) => {
+    if (eventoEditar) {
+      // Actualizar evento existente
+      const eventosActualizados = eventos.map(e =>
+        e.id === evento.id ? evento : e
+      );
+      setEventos(eventosActualizados);
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem("eventos", JSON.stringify(eventosActualizados));
+      }
+      setEventoEditar(null);
+      console.log("Evento actualizado: ", evento);
+    } else {
+      // Crear nuevo evento
+      const nuevosEventos = [...eventos, evento];
+      setEventos(nuevosEventos);
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem("eventos", JSON.stringify(nuevosEventos));
+      }
+      console.log("Nuevo evento creado: ", evento);
+    }
+    setMostrarFormulario(false);
   };
 
-  const handleDeleteTest = (id: string) => {
-    console.log("Eliminando evento con ID:", id);
-    setTestEventos(prev => prev.filter(e => e.id !== id));
+  const handleEditar = (evento: Evento) => {
+    setEventoEditar(evento);
+    setMostrarFormulario(true);
+    console.log("Iniciando edician para: ", evento);
+  };
+
+  const handleEliminar = (id: string) => {
+    const eventosActualizados = eventos.filter(evento => evento.id !== id);
+    setEventos(eventosActualizados);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem("eventos", JSON.stringify(eventosActualizados));
+    }
+    console.log("Evento eliminado con ID: ", id);
+  };
+
+  const handleCancelar = () => {
+    setEventoEditar(null);
+    setMostrarFormulario(false);
+    console.log("Edicion cancelada.");
   };
 
   return (
     <div>
-      <h1>Sistema de Gestión de Actividades</h1>
-      <p>Testeo del componente Tabla.</p>
-      <Tabla eventos={testEventos} onEditar={handleEditTest} onEliminar={handleDeleteTest} />
+      <h1>Sistema de Gestion de Actividades</h1>
+      <p>Organizzacion Comunitaria - Gestion de Eventos</p>
+
+      <button
+        onClick={() => {
+          setMostrarFormulario(!mostrarFormulario);
+          if (eventoEditar) {
+            setEventoEditar(null);
+          }
+          console.log("Boton 'Crear Nuevo Evento' / 'Ocultar Formulario' clickeado. Mostrar formulario: ", !mostrarFormulario);
+        }}
+      >
+        {mostrarFormulario ? 'Ocultar Formulario' : 'Crear Nuevo Evento'}
+      </button>
+
+      {mostrarFormulario && (
+        <Formulario
+          onSubmit={handleRegistrar}
+          eventoEditar={eventoEditar}
+          onCancelar={handleCancelar}
+        />
+      )}
+
+      <Tabla
+        eventos={eventos}
+        onEditar={handleEditar}
+        onEliminar={handleEliminar}
+      />
+
     </div>
   );
 }

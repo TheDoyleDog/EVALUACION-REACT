@@ -21,7 +21,7 @@ export default function Tabla({ eventos, onEditar, onEliminar}: TablaProps) {
     });
 
     const handleEliminar = (id: string, nombre: string) => {
-        if (window.confirm('Esta seguro de que desea elimnar el evento "${nombre}"?')) {
+        if (window.confirm(`Esta seguro de que desea eliminar el evento "${nombre}"?`)) {
             onEliminar(id);
         }
     };
