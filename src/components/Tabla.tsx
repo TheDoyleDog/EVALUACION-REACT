@@ -48,6 +48,7 @@ export default function Tabla({ eventos, onEditar, onEliminar}: TablaProps) {
                 <option value="cultural">Cultural</option>
                 <option value="deportivo">Deportivo</option>
                 <option value="benefico">Benefico</option>
+                <option value="social">Social</option>
             </select><br/>
 
             <p>Mostrando {eventosFiltrados.length} de {eventos.length} eventos</p>
