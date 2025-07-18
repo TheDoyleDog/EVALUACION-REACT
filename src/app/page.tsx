@@ -1,46 +1,41 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import Formulario from '@/components/Formulario';
 import Tabla from '@/components/Tabla';
 import { Evento, initialStateEvento } from '@/types';
+import { obtenerEventos, registrarEvento, actualizarEvento, eliminarEvento } from '@/app/Firebase/Promesas';
 
 export default function Home() {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [eventoEditar, setEventoEditar] = useState<Evento | null>(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
-  // Cargar eventos desde local storage al iniciar la pagina
+  // Cargar eventos desde Firebase al iniciar la pagina
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      let listadoStr = window.localStorage.getItem("eventos");
-      if (listadoStr != null) {
-        let listado = JSON.parse(listadoStr);
-        setEventos(listado);
-      }
-      console.log("useEffect: Eventos cargados exitosamente");
-    }
+    const getEventos = async () => {
+      const data = await obtenerEventos();
+      setEventos(data);
+    };
+    getEventos();
   }, []);
 
-  const handleRegistrar = (evento: Evento) => {
+  const handleRegistrar = async (evento: Evento) => {
     if (eventoEditar) {
-      // Actualizar evento existente
+      // Actualizar evento existente en Firebase
+      await actualizarEvento(evento);
       const eventosActualizados = eventos.map(e =>
         e.id === evento.id ? evento : e
       );
       setEventos(eventosActualizados);
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem("eventos", JSON.stringify(eventosActualizados));
-      }
       setEventoEditar(null);
-      console.log("Evento actualizado: ", evento);
+      console.log("Evento actualizado en Firebase: ", evento);
     } else {
-      // Crear nuevo evento
-      const nuevosEventos = [...eventos, evento];
+      // Crear nuevo evento en Firebase
+      const nuevoEventoConId = await registrarEvento(evento);
+      const nuevosEventos = [...eventos, nuevoEventoConId];
       setEventos(nuevosEventos);
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem("eventos", JSON.stringify(nuevosEventos));
-      }
-      console.log("Nuevo evento creado: ", evento);
+      console.log("Nuevo evento creado en Firebase: ", evento);
     }
     setMostrarFormulario(false);
   };
@@ -48,16 +43,15 @@ export default function Home() {
   const handleEditar = (evento: Evento) => {
     setEventoEditar(evento);
     setMostrarFormulario(true);
-    console.log("Iniciando edician para: ", evento);
+    console.log("Iniciando edicion para: ", evento);
   };
 
-  const handleEliminar = (id: string) => {
+  const handleEliminar = async (id: string) => {
+    // Eliminar evento de Firebase
+    await eliminarEvento(id);
     const eventosActualizados = eventos.filter(evento => evento.id !== id);
     setEventos(eventosActualizados);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem("eventos", JSON.stringify(eventosActualizados));
-    }
-    console.log("Evento eliminado con ID: ", id);
+    console.log("Evento eliminado de Firebase con ID: ", id);
   };
 
   const handleCancelar = () => {
@@ -69,7 +63,7 @@ export default function Home() {
   return (
     <div>
       <h1>Sistema de Gestion de Actividades</h1>
-      <p>Organizzacion Comunitaria - Gestion de Eventos</p>
+      <p>Organizacion Comunitaria - Gestion de Eventos</p>
 
       <button
         onClick={() => {
@@ -100,3 +94,5 @@ export default function Home() {
     </div>
   );
 }
+
+
